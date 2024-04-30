@@ -7,8 +7,12 @@ const reservationSchema = new mongoose.Schema({
   date_debut: Date,
   date_fin: Date,
   montant: Number,
-  etat: { type: String, enum: ["envoyé", "annulé", "accepté", "réfusé"] },
-  supprime: Boolean,
+  etat: {
+    type: String,
+    enum: ["envoyé", "annulé", "accepté", "réfusé"],
+    default: "envoyé",
+  },
+  supprime: { type: Boolean, default: false },
   cree_le: { type: Date, default: Date.now },
 });
 const Reservation = mongoose.model("reservations", reservationSchema);
