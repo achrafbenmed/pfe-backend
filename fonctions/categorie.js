@@ -3,11 +3,15 @@ const Categorie = require("../models/Categorie");
 const router = express.Router();
 
 router.get("/getAll", async (request, response) => {
-  const categories = await Categorie.find();
+  const categories = await Categorie.find().sort({
+    cree_le: -1,
+  });
   response.send(categories);
 });
 router.get("/", async (request, response) => {
-  const categories = await Categorie.find({ supprime: false });
+  const categories = await Categorie.find({ supprime: false }).sort({
+    cree_le: -1,
+  });
   response.send(categories);
 });
 

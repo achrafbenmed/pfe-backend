@@ -9,6 +9,9 @@ const router = express.Router();
 
 router.get("/getAll", async (request, response) => {
   const reservation = await Reservation.find()
+    .sort({
+      cree_le: -1,
+    })
     .populate("id_produit")
     .populate("id_utilisateur");
   response.send(reservation);
@@ -16,6 +19,9 @@ router.get("/getAll", async (request, response) => {
 
 router.get("/", async (request, response) => {
   const reservation = await Reservation.find({ supprime: false })
+    .sort({
+      cree_le: -1,
+    })
     .populate("id_produit")
     .populate("id_utilisateur");
   response.send(reservation);

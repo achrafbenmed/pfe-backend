@@ -15,12 +15,16 @@ const upload = multer({ storage: storage });
 const router = express.Router();
 
 router.get("/getAll", async (request, response) => {
-  const produits = await Produit.find();
+  const produits = await Produit.find().sort({
+    cree_le: -1,
+  });
   response.send(produits);
 });
 
 router.get("/", async (request, response) => {
-  const produits = await Produit.find({ supprime: false });
+  const produits = await Produit.find({ supprime: false }).sort({
+    cree_le: -1,
+  });
   response.send(produits);
 });
 

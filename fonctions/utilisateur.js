@@ -4,12 +4,14 @@ const Utilisateur = require("../models/Utilisateur");
 
 const router = express.Router();
 router.get("/getAll", async (request, response) => {
-  const utilisateur = await Utilisateur.find();
+  const utilisateur = await Utilisateur.find().sort({ cree_le: -1 });
   response.send(utilisateur);
 });
 
 router.get("/", async (request, response) => {
-  const utilisateur = await Utilisateur.find({ supprime: false });
+  const utilisateur = await Utilisateur.find({ supprime: false }).sort({
+    cree_le: -1,
+  });
   response.send(utilisateur);
 });
 
@@ -44,15 +46,17 @@ router.put("/:id", async (request, response) => {
     const id = request.params.id;
     const utilisateur = await Utilisateur.findById(id);
     if (utilisateur) {
-      utilisateur.nom = nom;
-      utilisateur.prenom = prenom;
-      utilisateur.cin = cin;
-      utilisateur.email = email;
-      utilisateur.mdp = mdp;
-      utilisateur.role = role;
-      utilisateur.tel = tel;
-      utilisateur.date_naissance = date_naissance;
-      utilisateur.sexe = sexe;
+      utilisateur.nom = nom ? nom : utilisateur.nom;
+      utilisateur.prenom = prenom ? prenom : utilisateur.prenom;
+      utilisateur.cin = cin ? cin : utilisateur.cin;
+      utilisateur.email = email ? email : utilisateur.email;
+      utilisateur.mdp = mdp ? mdp : utilisateur.mdp;
+      utilisateur.role = role ? role : utilisateur.role;
+      utilisateur.tel = tel ? tel : utilisateur.tel;
+      utilisateur.date_naissance = date_naissance
+        ? date_naissance
+        : utilisateur.date_naissance;
+      utilisateur.sexe = sexe ? sexe : utilisateur.sexe;
       utilisateur
         .save()
         .then((savedUtilisateur) => {
