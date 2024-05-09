@@ -151,4 +151,17 @@ router.put("/restore/:id", async (request, response) => {
     response.send(erreur.message);
   }
 });
+
+router.get("/getByUser/:id", async (req, res) => {
+  const id = req.params.id;
+  const reservations = await Reservation.find({
+    id_utilisateur: id,
+    supprime: false,
+  })
+    .sort({
+      cree_le: -1,
+    })
+    .populate("id_produit");
+  res.send(reservations);
+});
 module.exports = router;
