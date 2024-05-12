@@ -2,11 +2,17 @@ const mongoose = require("mongoose");
 const Produit = require("./Produit");
 const Utilisateur = require("./Utilisateur");
 const reservationSchema = new mongoose.Schema({
-  id_produit: { type: mongoose.Types.ObjectId, ref: Produit },
+  montantTotal: Number,
   id_utilisateur: { type: mongoose.Types.ObjectId, ref: Utilisateur },
-  date_debut: Date,
-  date_fin: Date,
-  montant: Number,
+  items: [
+    {
+      produit: { type: mongoose.Types.ObjectId, ref: Produit },
+      date_debut: Date,
+      date_fin: Date,
+      montant: Number,
+      qte: Number,
+    },
+  ],
   etat: {
     type: String,
     enum: ["envoyé", "annulé", "accepté", "réfusé"],
