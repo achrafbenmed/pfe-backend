@@ -35,14 +35,55 @@ router.post("/", async (request, response) => {
     items,
   });
 
-  reservation
-    .save()
-    .then((savedReservation) => {
-      response.send(savedReservation);
+  Promise.all(
+    items.map(async (item) => {
+      const produit = await Produit.findById(item.produit._id);
+      const chevauchements = await Reservation.find({
+        "items.produit": { $in: items.map((item) => item.produit) },
+        $or: [
+          {
+            $and: [
+              { "items.date_debut": { $lte: item.date_debut } },
+              { "items.date_fin": { $gte: item.date_debut } },
+            ],
+          },
+          {
+            $and: [
+              { "items.date_debut": { $lte: item.date_fin } },
+              { "items.date_fin": { $gte: item.date_fin } },
+            ],
+          },
+          {
+            $and: [
+              { "items.date_debut": { $gte: item.date_debut } },
+              { "items.date_fin": { $lte: item.date_fin } },
+            ],
+          },
+        ],
+        etat: "accepté",
+      });
+      console.log({
+        plafond: produit.qte,
+        chevauchements: chevauchements.length,
+        qte: item.qte,
+        id: item.produit._id,
+      });
+      return produit.qte * 1 - (item.qte * 1 + chevauchements.length * 1) < 0;
     })
-    .catch((erreur) => {
-      console.log(erreur.message);
-    });
+  ).then((data) => {
+    if (data.includes(true)) {
+      response.status(500).send("chevauchement");
+    } else {
+      reservation
+        .save()
+        .then((savedReservation) => {
+          response.send(savedReservation);
+        })
+        .catch((erreur) => {
+          console.log(erreur.message);
+        });
+    }
+  });
 });
 
 router.put("/:id", async (request, response) => {
