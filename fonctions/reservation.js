@@ -34,15 +34,46 @@ router.post("/", async (request, response) => {
     id_utilisateur,
     items,
   });
-
-  reservation
-    .save()
-    .then((savedReservation) => {
-      response.send(savedReservation);
+  Promise.all(
+    items.map(async (item) => {
+      const reservations = await Reservation.find({
+        "items.produit": item.produit._id,
+        etat: "accepté",
+      });
+      const chevauchements = reservations.filter((r) => {
+        return (
+          dayjs(item.date_debut).isBetween(r.date_debut, r.date_fin) ||
+          dayjs(item.date_fin).isBetween(r.date_debut, r.date_fin) ||
+          dayjs(r.date_debut).isBetween(item.date_debut, item.date_fin) ||
+          dayjs(r.date_fin).isBetween(item.date_debut, item.date_fin) ||
+          dayjs(r.date_debut).format("YYYY-MM-DD") ===
+            dayjs(item.date_debut).format("YYYY-MM-DD") ||
+          dayjs(r.date_debut).format("YYYY-MM-DD") ===
+            dayjs(item.date_fin).format("YYYY-MM-DD") ||
+          dayjs(r.date_fin).format("YYYY-MM-DD") ===
+            dayjs(item.date_debut).format("YYYY-MM-DD") ||
+          dayjs(r.date_fin).format("YYYY-MM-DD") ===
+            dayjs(item.date_fin).format("YYYY-MM-DD")
+        );
+      });
+      console.log(chevauchements);
+      return chevauchements;
     })
-    .catch((erreur) => {
-      console.log(erreur.message);
-    });
+  ).then((data) => {
+    console.log(data[0]);
+    if (data[0].length === 0) {
+      reservation
+        .save()
+        .then((savedReservation) => {
+          response.send(savedReservation);
+        })
+        .catch((erreur) => {
+          console.log(erreur.message);
+        });
+    } else {
+      response.status(500).send("chevauchement");
+    }
+  });
 });
 
 router.put("/:id", async (request, response) => {
