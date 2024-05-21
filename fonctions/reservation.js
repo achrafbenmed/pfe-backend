@@ -34,34 +34,54 @@ router.post("/", async (request, response) => {
     id_utilisateur,
     items,
   });
+
   Promise.all(
     items.map(async (item) => {
-      const reservations = await Reservation.find({
-        "items.produit": item.produit._id,
+      let qte_reservé = 0;
+      const produit = await Produit.findById(item.produit._id);
+      const chevauchements = await Reservation.find({
+        "items.produit": { $in: items.map((item) => item.produit) },
+        $or: [
+          {
+            $and: [
+              { "items.date_debut": { $lte: item.date_debut } },
+              { "items.date_fin": { $gte: item.date_debut } },
+            ],
+          },
+          {
+            $and: [
+              { "items.date_debut": { $lte: item.date_fin } },
+              { "items.date_fin": { $gte: item.date_fin } },
+            ],
+          },
+          {
+            $and: [
+              { "items.date_debut": { $gte: item.date_debut } },
+              { "items.date_fin": { $lte: item.date_fin } },
+            ],
+          },
+        ],
         etat: "accepté",
       });
-      const chevauchements = reservations.filter((r) => {
-        return (
-          dayjs(item.date_debut).isBetween(r.date_debut, r.date_fin) ||
-          dayjs(item.date_fin).isBetween(r.date_debut, r.date_fin) ||
-          dayjs(r.date_debut).isBetween(item.date_debut, item.date_fin) ||
-          dayjs(r.date_fin).isBetween(item.date_debut, item.date_fin) ||
-          dayjs(r.date_debut).format("YYYY-MM-DD") ===
-            dayjs(item.date_debut).format("YYYY-MM-DD") ||
-          dayjs(r.date_debut).format("YYYY-MM-DD") ===
-            dayjs(item.date_fin).format("YYYY-MM-DD") ||
-          dayjs(r.date_fin).format("YYYY-MM-DD") ===
-            dayjs(item.date_debut).format("YYYY-MM-DD") ||
-          dayjs(r.date_fin).format("YYYY-MM-DD") ===
-            dayjs(item.date_fin).format("YYYY-MM-DD")
-        );
+      chevauchements.map((ch) => {
+        ch.items.map((i) => {
+          if (i.produit + "" == item.produit) {
+            qte_reservé += i.qte;
+          }
+        });
       });
-      console.log(chevauchements);
-      return chevauchements;
+      console.log({
+        plafond: produit.qte,
+        chevauchements: qte_reservé,
+        qte: item.qte,
+        id: item.produit._id,
+      });
+      return produit.qte * 1 - (item.qte * 1 + chevauchements.length * 1) < 0;
     })
   ).then((data) => {
-    console.log(data[0]);
-    if (data[0].length === 0) {
+    if (data.includes(true)) {
+      response.status(500).send("chevauchement");
+    } else {
       reservation
         .save()
         .then((savedReservation) => {
@@ -70,8 +90,6 @@ router.post("/", async (request, response) => {
         .catch((erreur) => {
           console.log(erreur.message);
         });
-    } else {
-      response.status(500).send("chevauchement");
     }
   });
 });
