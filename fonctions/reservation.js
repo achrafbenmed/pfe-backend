@@ -63,22 +63,27 @@ router.post("/", async (request, response) => {
         ],
         etat: "accepté",
       });
-      chevauchements.map((ch) => {
-        ch.items.map((i) => {
-          if (i.produit + "" == item.produit) {
-            qte_reservé += i.qte;
-          }
+      const a = chevauchements.map((ch) => {
+        return ch.items.map((i) => {
+          return {
+            qte: i.produit + "" === item.produit._id ? i.qte : 0,
+            id: i.produit + "",
+            item: item.produit._id,
+          };
         });
       });
+
+      const flatData = a.flat();
+      const sumOfI = flatData.reduce((acc, obj) => acc + parseInt(obj.qte), 0);
       console.log({
-        plafond: produit.qte,
-        chevauchements: qte_reservé,
-        qte: item.qte,
-        id: item.produit._id,
+        prodtuitQTE: produit.qte * 1,
+        qte_volu: item.qte * 1,
+        qte_reserve: sumOfI * 1,
       });
-      return produit.qte * 1 - (item.qte * 1 + chevauchements.length * 1) < 0;
+      return produit.qte * 1 - (item.qte * 1 + sumOfI * 1) < 0;
     })
   ).then((data) => {
+    console.log(data);
     if (data.includes(true)) {
       response.status(500).send("chevauchement");
     } else {
